@@ -80,6 +80,33 @@ class Auth {
         next();
     }
 
+    async ban ({token, user}) {
+        try {
+            if(token) {
+                await this.loginClass.logout(token);
+                await Banlist.create({ token });
+            } else if(user) {
+                await Banlist.create({ user });
+            }
+            return { result: true };
+        } catch (error) {
+            return { result: true };
+        }
+    }
+    async unban ({token, user}) {
+        try {
+            if(token) {
+                await Banlist.findOneAndDelete({ token });
+            }
+            if(user) {
+                await Banlist.findOneAndDelete({ user });
+            }
+            return { result: true };
+        } catch (error) {
+            return { result: true };
+        }
+    }
+
     async logout (token) {
         try {
             await this.loginClass.logout(token);
