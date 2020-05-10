@@ -25,9 +25,7 @@ class Simple {
 
     async logout(token) {
         try {
-            const user = jwt.decode(token, this.secretKey);
-            const result = await Banlist.create({ token, owner: user.id })
-            return { result: result ? true : false };
+            return { result: true };
         } catch (err) {
             throw err;
         }
@@ -60,8 +58,6 @@ class Simple {
         const json = await this.verifyToken(token);
         if (json) {
             try {
-                const isBanned = await Banlist.findOne({ $or: [{ token }, { user: json.id }] });
-                if(isBanned) return false;
                 const user = await this.UserModel.findById(json.id);
                 return { user }
             } catch (err) {
@@ -77,14 +73,6 @@ class Simple {
     }
 
     async verifyToken(token) {
-        try {
-            const isBanned = await Banlist.findOne({ token });
-            if (isBanned) {
-                return false;
-            }
-        } catch (err) {
-            console.error(err)
-        }
         return jwt.decode(token, this.secretKey);
     }
 

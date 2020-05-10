@@ -1,7 +1,7 @@
 const {promisify} = require("util");
 const admin = require("firebase-admin");
 const Errors = require("./Errors")
-
+const Banlist = require("./Banlist")
 
 class FireBase {
     constructor(options) {
@@ -51,6 +51,16 @@ class FireBase {
             return false;
         }
 
+    }
+
+    async logout(token) {
+        try {
+            await this.adel(`${this.tokenprefix}:${token}`);
+            return true;
+        } catch (error) {
+            console.log(error)
+            this.client.del(`${this.tokenprefix}:${token}`);
+        }
     }
 
     async login(token) {

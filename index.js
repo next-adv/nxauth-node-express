@@ -68,19 +68,22 @@ class Auth {
 
     async middleware(req,res,next) {
         if(!req.headers.authorization) {
-            return res.status(401).json({message: "Not Authorized"})
+            return res.status(401).json({message: "Unauthorized"})
         }
         const result = await this.loginClass.middleware(req.headers.authorization.replace("Bearer ",""));
-        if(!result) {
-            return res.status(401).json({message: "Not Authorized"})
+        if(!result || !result.user) {
+            return res.status(401).json({message: "Unauthorized"});
         }
+        const isBanned = await Banlist.findOne({ $or: [{ token }, { user: result.id }] });
+         if(isBanned) return res.status(403).json({message: Errors.BANNED_TOKEN});
         req.user = result.user;
         next();
     }
 
-    async logout (user) {
+    async logout (token) {
         try {
-            await this.loginClass.logout(user);
+            await this.loginClass.logout(token);
+            await Banlist.create({ token });
             return { result: true };
         } catch (error) {
             return { result: true };
