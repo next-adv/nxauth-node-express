@@ -1,7 +1,7 @@
 const Firebase = require("./src/FireBase");
 const Simple = require("./src/Simple");
-const validator = require("validator");
-const Errors = require("./src/Errors")
+const Banlist = require("./src/Banlist");
+const Errors = require("./src/Errors");
 
 class Auth {
     constructor ({
@@ -78,6 +78,15 @@ class Auth {
         next();
     }
 
+    async logout (user) {
+        try {
+            await this.loginClass.logout(user);
+            return { result: true };
+        } catch (error) {
+            return { result: true };
+        }
+    }
+
     async login (username, password) {
         try {
             const user = await this.loginClass.login(username, password);
@@ -100,8 +109,10 @@ class Auth {
     async firebase(token) {
         try {
             const { result, user, error, code } = await this.loginClass.login(token);
-            if(err) throw err;
+            if(error) throw new Error(error);
             if(!result) return false;
+            const banned = await Banlist.findOne({user: user.id})
+            if(banned) throw new Error({message: Errors.BANNED_USER, code: 403});
             return {user};
         } catch(err) {
             throw err;

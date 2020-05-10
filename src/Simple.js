@@ -3,54 +3,68 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require('bcrypt');
 const { machineIdSync } = require("node-machine-id");
 const AbstractUserModel = require("./AbstractUserModel");
+const Banlist = require("./Banlist");
 
-class Simple {  
+class Simple {
     /**
      * 
      * @param {UserModel, secretKey} options 
-     */  
+     */
     constructor(options) {
         const { authDomain, authIssuer, UserModel, usernameField, passwordField, passwordVerify, secretKey } = options;
-        this.authDomain = authDomain || "null.domain.com", 
-        this.authIssuer = authIssuer || "expreess-test-example", 
-        this.usernameField = usernameField || "email";
+        this.authDomain = authDomain || "null.domain.com",
+            this.authIssuer = authIssuer || "expreess-test-example",
+            this.usernameField = usernameField || "email";
         this.passwordField = passwordField || "password";
         this.secretKey = secretKey || hash("sha256").update(machineIdSync() + __dirname).digest("hex");
         this.UserModel = new AbstractUserModel(UserModel);
-        this.verify = passwordVerify? passwordVerify : this.default;
+        this.verify = passwordVerify ? passwordVerify : this.default;
         this.saltrounds = options.saltrounds || 12;
+
+    }
+
+    async logout(token) {
+        try {
+            const user = jwt.decode(token, this.secretKey);
+            const result = await Banlist.create({ token, owner: user.id })
+            return { result: result ? true : false };
+        } catch (err) {
+            throw err;
+        }
     }
 
     async login(username, password) {
         const query = { [this.usernameField]: username };
         try {
             const user = await this.UserModel.findOne(query);
-            if(!user) return false;
+            if (!user) return false;
             const result = await this.verify(password, user[this.passwordField]);
-            return result? user : false;
-        } catch(err) {
+            return result ? user : false;
+        } catch (err) {
             throw err;
         }
     }
 
-    async createPassword (password) {
+    async createPassword(password) {
         try {
-            console.log("secret",this.secretKey,password)
-            const pwd = hash("sha256").update(this.secretKey+password).digest("hex");
+            console.log("secret", this.secretKey, password)
+            const pwd = hash("sha256").update(this.secretKey + password).digest("hex");
             const bpwd = await bcrypt.hash(pwd, this.saltrounds);
-            return bpwd;    
-        } catch(err){
+            return bpwd;
+        } catch (err) {
             throw err;
         }
     }
 
-    async middleware (token) {
-        const json = this.verifyToken(token);
-        if(json) {
-            try{
+    async middleware(token) {
+        const json = await this.verifyToken(token);
+        if (json) {
+            try {
+                const isBanned = await Banlist.findOne({ $or: [{ token }, { user: json.id }] });
+                if(isBanned) return false;
                 const user = await this.UserModel.findById(json.id);
-                return {user}
-            } catch(err) {
+                return { user }
+            } catch (err) {
                 console.error(err)
                 return false;
             }
@@ -58,21 +72,29 @@ class Simple {
         return false;
     }
 
-    createToken(data){
-        return jwt.sign({...data, iss: this.authIssuer, domain: this.authDomain},this.secretKey);
+    createToken(data) {
+        return jwt.sign({ ...data, iss: this.authIssuer, domain: this.authDomain }, this.secretKey);
     }
-    
-    verifyToken(token) {
-        return jwt.decode(token,this.secretKey);
+
+    async verifyToken(token) {
+        try {
+            const isBanned = await Banlist.findOne({ token });
+            if (isBanned) {
+                return false;
+            }
+        } catch (err) {
+            console.error(err)
+        }
+        return jwt.decode(token, this.secretKey);
     }
 
     async default(password, hashed) {
-        try{
-            const test = hash("sha256").update(this.secretKey+password).digest("hex");
+        try {
+            const test = hash("sha256").update(this.secretKey + password).digest("hex");
             return await bcrypt.compare(test, hashed);
-        } catch(err){
-             console.log(err)
-             return false;
+        } catch (err) {
+            console.log(err)
+            return false;
         }
     }
 }
