@@ -1,1 +1,5 @@
 /node_modules
+/addModel.sh
+/yarn.lock
+/src/Abstract.js
+/.gitignore
