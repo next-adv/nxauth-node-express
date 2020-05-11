@@ -23,6 +23,10 @@ class Simple {
 
     }
 
+    async purge(token) {
+        return Promise.resolve(true);
+    }
+
     async logout(token) {
         try {
             return { result: true };

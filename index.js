@@ -73,7 +73,6 @@ class Auth {
         }
     }
 
-
     /**
      * Updates a password
      *
@@ -116,6 +115,25 @@ class Auth {
     }
 
     /**
+     * Purges a token
+     *
+     * @param {*} { token, user }
+     * @returns result true
+     * @memberof Auth
+     */
+    async purge(token) {
+        try {
+            token = token.replace("Bearer ", "")
+            if (token) {
+                await this.AuthHandler.purge(token);
+            }
+            return { result: true };
+        } catch (error) {
+            return { result: true };
+        }
+    }
+
+    /**
      * Bans a user or a token
      *
      * @param {*} { token, user }
@@ -124,6 +142,7 @@ class Auth {
      */
     async ban({ token, user }) {
         try {
+            token = token.replace("Bearer ", "")
             if (token) {
                 await this.AuthHandler.logout(token);
                 await Banlist.create({ token });
@@ -145,6 +164,7 @@ class Auth {
      */
     async unban({ token, user }) {
         try {
+            token = token.replace("Bearer ", "")
             if (token) {
                 await Banlist.findOneAndDelete({ token });
             }
@@ -166,6 +186,7 @@ class Auth {
      */
     async logout(token) {
         try {
+            token = token.replace("Bearer ", "")
             await this.AuthHandler.logout(token);
             await Banlist.create({ token });
             return { result: true };
@@ -203,6 +224,7 @@ class Auth {
      */
     async verifyToken(token) {
         try {
+            token = token.replace("Bearer ", "")
             return await this.AuthHandler.verifyToken(token);
         } catch (err) {
             throw err;

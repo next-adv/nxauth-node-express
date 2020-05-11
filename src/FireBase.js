@@ -25,6 +25,16 @@ class FireBase {
         
     }
 
+    async purge(token) {
+        try {
+            await this.adel(`${this.tokenprefix}:${token}`); 
+            return true;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    }
+
     async middleware(token) {
         try{
             let user = await this.verifyToken(`${this.tokenprefix}:${token}`);
