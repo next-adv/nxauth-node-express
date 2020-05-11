@@ -17,7 +17,7 @@ class Auth {
     constructor({
         authDomain, authIssuer, provider, secretKey,
         usernameField, passwordField, UserModel, UserModelType,
-        firebase, redisCli, tokenprefix,
+        firebase, redisCli,
         mongooseUri
     }) {
         if (!provider) provider = "simple";
@@ -31,7 +31,7 @@ class Auth {
         this.secretKey = secretKey;
         this.redis = redisCli;
         this.provider = provider;
-        this.tokenprefix = tokenprefix;
+        this.tokenprefix = firebase.tokenprefix;
 
         mongoose.connect(mongooseUri, {
             useNewUrlParser: true,
@@ -51,7 +51,7 @@ class Auth {
                 case "firebase":
                     const serviceAccount = require(firebase.serviceAccount);
                     const databaseURL = firebase.databaseURL;
-                    this.AuthHandler = new Firebase({ UserModel, UserModelType: this.UserModelType, databaseURL, serviceAccount, redisCli, tokenprefix });
+                    this.AuthHandler = new Firebase({ UserModel, UserModelType: this.UserModelType, databaseURL, serviceAccount, redisCli, tokenprefix: this.tokenprefix });
                     break;
             }
         } catch(err) {
@@ -126,7 +126,8 @@ class Auth {
         let result;
         try {
             result = await this.AuthHandler.middleware(req.headers.authorization.replace("Bearer ", ""));
-            if (!result || !result.user) {
+            if (!result) {
+                console.log("NO TOKEN RESULT")
                 return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
             }
         } catch(err) {
@@ -134,9 +135,9 @@ class Auth {
             return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
         }
         try {
-            const isBanned = await Banlist.findOne({ token });
+            const isBanned = await Banlist.findOne({ token: req.headers.authorization.replace("Bearer ", "") });
             if (isBanned) return res.status(403).json({ message: AuthErrors.BANNED_TOKEN });
-            req.user = result.user;
+            req.user = result;
         } catch (error) {
             console.error(error)
             return res.status(500).json({ message: AuthErrors.BANNED_TOKEN });
