@@ -39,10 +39,8 @@ class FireBase {
     }
 
     async middleware(token) {
-        console.log("pref",this.tokenprefix)
         try {
             let cache = await this.aget(`${this.tokenprefix}:${token}`);
-            console.log(`${this.tokenprefix}:${token}`,cache)
             if (!cache) {
                 const result = await this.login(token);
                 return result.user;
