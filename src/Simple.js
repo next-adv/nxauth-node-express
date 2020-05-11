@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require('bcrypt');
 const { machineIdSync } = require("node-machine-id");
 const AbstractUserModel = require("./AbstractUserModel");
-const Banlist = require("./Banlist");
 
 class Simple {
     /**
@@ -11,13 +10,13 @@ class Simple {
      * @param {UserModel, secretKey} options 
      */
     constructor(options) {
-        const { authDomain, authIssuer, UserModel, usernameField, passwordField, passwordVerify, secretKey } = options;
+        const { authDomain, authIssuer, UserModel, UserModelType, usernameField, passwordField, passwordVerify, secretKey } = options;
         this.authDomain = authDomain || "null.domain.com",
             this.authIssuer = authIssuer || "expreess-test-example",
             this.usernameField = usernameField || "email";
         this.passwordField = passwordField || "password";
         this.secretKey = secretKey || hash("sha256").update(machineIdSync() + __dirname).digest("hex");
-        this.UserModel = new AbstractUserModel(UserModel);
+        this.UserModel = new AbstractUserModel(UserModel, UserModelType || "mongoose");
         this.verify = passwordVerify ? passwordVerify : this.default;
         this.saltrounds = options.saltrounds || 12;
 

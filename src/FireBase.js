@@ -1,18 +1,18 @@
-const {promisify} = require("util");
+const { promisify } = require("util");
 const admin = require("firebase-admin");
-const Errors = require("./Errors")
-const Banlist = require("./Banlist")
+const {AuthErrors, AuthError} = require("./Errors");
+const AbstractUserModel = require("./AbstractUserModel");
 
 class FireBase {
     constructor(options) {
-        const { UserModel, redisCli, serviceAccount, databaseURL, tokenprefix } = options;
+        const { UserModel, UserModelType, redisCli, serviceAccount, databaseURL, tokenprefix } = options;
+        if(!UserModel) throw new Error("NO MODEL")
         this.client = redisCli;
         this.serviceAccount = serviceAccount;
         this.databaseURL = databaseURL;
-        this.UserModel = UserModel;
+        this.UserModel = new AbstractUserModel(UserModel, UserModelType || "mongoose");
         this.tokenprefix = tokenprefix
-        if(!this.client) return false;
-        this.login = this.login.bind(this);
+        if (!this.client) return false;
         this.bind();
     }
 
@@ -20,16 +20,16 @@ class FireBase {
         admin.initializeApp({
             credential: admin.credential.cert(this.serviceAccount),
             databaseURL: this.databaseURL
-          });/*  */
+        });/*  */
         this.aget = promisify(this.client.get).bind(this.client);
         this.aset = promisify(this.client.set).bind(this.client);
         this.adel = promisify(this.client.del).bind(this.client);
-        
+        console.log("Class Auth Initialized")
     }
 
     async purge(token) {
         try {
-            await this.adel(`${this.tokenprefix}:${token}`); 
+            await this.adel(`${this.tokenprefix}:${token}`);
             return true;
         } catch (error) {
             console.error(error);
@@ -38,27 +38,25 @@ class FireBase {
     }
 
     async middleware(token) {
-        try{
-            let user = await this.verifyToken(`${this.tokenprefix}:${token}`);
-            if(!user) {
+        try {
+            let cache = await this.aget(`${this.tokenprefix}:${token}`);
+            if (!cache) {
                 const result = await this.login(token);
                 return result.user;
             }
-            return JSON.parse(user);
-        } catch(err) {
+            return JSON.parse(cache);
+        } catch (err) {
             console.error(err)
             return false;
         }
     }
 
+
     async verifyToken(token) {
-        try{
-            const user = await this.aget(`${this.tokenprefix}:${token}`);
-            if(!user) {
-                return false;
-            }
-            return JSON.parse(user);
-        } catch(err) {
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(token);
+            return decodedToken;
+        } catch (err) {
             console.error(err)
             return false;
         }
@@ -76,26 +74,24 @@ class FireBase {
     }
 
     async login(token) {
-        return admin.auth().verifyIdToken(token)
-        .then(async (decodedToken) => {
-            let firebaseId = decodedToken.uid || decodedToken.user_id;
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        let firebaseId = decodedToken.uid || decodedToken.user_id;
+        try {
             const exp = decodedToken.exp - Math.floor(Date.now() / 1000);
-            try {
-                const founduser = await this.UserModel.findOne({ firebaseId }).populate("services").populate("availability");
-                if (founduser) {
-                    await this.aset(`${this.tokenprefix}:${token}`, JSON.stringify(founduser), 'EX', exp);
-                    return { result: true, user: founduser };
-                } else {
-                    return { result: false, error: Errors.FIREBASE_USERISNEW, code: 440 };
-                }
-            } catch (error) {
-                console.error("err", error);
-                return { result: false, error: error.message, code: 500 };
+            const founduser = await this.UserModel.findOne({ firebaseId });
+            if (founduser) {
+                await founduser.populate("services").populate("availability");
+                await this.aset(`${this.tokenprefix}:${token}`, JSON.stringify(founduser), 'EX', exp);
+                return { result: true, user: founduser };
+            } else {
+                console.error(AuthErrors.FIREBASE_USERISNEW)
+                throw new AuthError(AuthErrors.FIREBASE_USERISNEW);
             }
-        }).catch(function (error) {
-            console.error("error", error);
-            return { result: false, error: error.message, code: 500 };
-        });
+        } catch (error) {
+            console.error(error)
+            throw error;
+        }
+
     }
 }
 

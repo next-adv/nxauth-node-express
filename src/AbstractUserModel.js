@@ -3,12 +3,11 @@ const mongoose = require("mongoose");
 
 class AbstractUserModel {
     
-    constructor(model) {
-        this.type = 'json';
+    constructor(model, type) {
+        this.type = type || 'mongoose';
         this.data = [];
-        this.model = model
-        if(model.prototype instanceof mongoose.Model){
-            this.type = "mongoose";
+        this.model = model;
+        if(this.type === "mongoose"){
             this.create = (data) => this.model.create(data);
             this.findById = (id) => this.model.findById(id);
             this.findByIdAndUpdate = (id, data,options) => this.model.findByIdAndUpdate(id, data,options);
@@ -41,14 +40,14 @@ class AbstractUserModel {
             } else {
                 this.data = [model];
             }
+            this.findOne = (query, options) => this.model.findOne(query, options)
+            this.find  = (query, projection, options) => this.model.find(query, projection, options)
         }
+
         this.findOne = (query, options) => this.model.findOne(query, options)
-        this.find  = (query, projection, options) => this.model.find(query, projection, options)
+        this.find = (query, projection, options) => this.model.find(query, projection, options);
         
     }
-    
-
-    
 }
 
 module.exports = AbstractUserModel;

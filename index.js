@@ -1,7 +1,8 @@
 const Firebase = require("./src/FireBase");
 const Simple = require("./src/Simple");
 const Banlist = require("./src/Banlist");
-const Errors = require("./src/Errors");
+const {AuthError, AuthErrors} = require("./src/Errors");
+const mongoose = require("mongoose");
 
 class Auth {
     /**
@@ -15,8 +16,9 @@ class Auth {
      */
     constructor({
         authDomain, authIssuer, provider, secretKey,
-        usernameField, passwordField, UserModel,
-        firebase, redisCli, tokenprefix
+        usernameField, passwordField, UserModel, UserModelType,
+        firebase, redisCli, tokenprefix,
+        mongooseUri
     }) {
         if (!provider) provider = "simple";
         this.authDomain = authDomain;
@@ -25,20 +27,35 @@ class Auth {
         this.usernameField = usernameField;
         this.passwordField = passwordField;
         this.UserModel = UserModel;
+        this.UserModelType = UserModelType || "mongoose";
         this.secretKey = secretKey;
         this.redis = redisCli;
         this.provider = provider;
+        this.tokenprefix = tokenprefix;
 
-        switch (provider.toLowerCase()) {
-            default:
-            case "simple":
-                this.AuthHandler = new Simple({ authDomain, authIssuer, UserModel, usernameField, passwordField, secretKey });
-                break;
-            case "firebase":
-                const serviceAccount = require(firebase.serviceAccount);
-                const databaseURL = firebase.databaseURL;
-                this.AuthHandler = new Firebase({ databaseURL, serviceAccount, redisCli, tokenprefix });
-                break;
+        mongoose.connect(mongooseUri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            useCreateIndex: true
+        }).then(() => {
+            mongoose.set('useFindAndModify', false);
+            console.log("NXAUTH Mongo connected:\x1b[33m", mongooseUri)
+        });
+
+        try {
+            switch (provider.toLowerCase()) {
+                default:
+                case "simple":
+                    this.AuthHandler = new Simple({ authDomain, authIssuer, UserModel, UserModelType: this.UserModelType, usernameField, passwordField, secretKey });
+                    break;
+                case "firebase":
+                    const serviceAccount = require(firebase.serviceAccount);
+                    const databaseURL = firebase.databaseURL;
+                    this.AuthHandler = new Firebase({ UserModel, UserModelType: this.UserModelType, databaseURL, serviceAccount, redisCli, tokenprefix });
+                    break;
+            }
+        } catch(err) {
+            throw err;
         }
         this.middleware = this.middleware.bind(this);
 
@@ -51,7 +68,7 @@ class Auth {
      * @returns mongoose.Model
      * @memberof Auth
      */
-    async register(data) {
+    async register(data, token) {
         try {
             switch (this.provider.toLowerCase()) {
                 default:
@@ -60,13 +77,15 @@ class Auth {
                     data[this.passwordField] = pwd;
                     return await this.UserModel.create(data);
                 case "firebase":
-                    if (!data.firebaseId) throw new Error(Errors.NOFIREBASEID);
+                    if (!token) throw new AuthError(AuthErrors.FIREBASE_NOID);
+                    const decodedToken = await this.AuthHandler.verifyToken(token);
+                    if (!decodedToken) throw new AuthError(AuthErrors.FIREBASE_NOID);
+                    data.firebaseId = decodedToken.uid || decodedToken.user_id;
                     return await this.UserModel.create(data);
             }
         } catch (err) {
-            console.error(err.message)
             if (err.code === 11000) {
-                throw new Error(Errors.DUPLICATE_USER_EMAIL);
+                throw new AuthError(AuthErrors.DUPLICATE_USER_EMAIL);
             }
             throw err;
 
@@ -102,15 +121,27 @@ class Auth {
      */
     async middleware(req, res, next) {
         if (!req.headers.authorization) {
-            return res.status(401).json({ message: "Unauthorized" })
+            return res.status(401).json({ message: AuthErrors.UNAUTHORIZED })
         }
-        const result = await this.AuthHandler.middleware(req.headers.authorization.replace("Bearer ", ""));
-        if (!result || !result.user) {
-            return res.status(401).json({ message: "Unauthorized" });
+        let result;
+        try {
+            result = await this.AuthHandler.middleware(req.headers.authorization.replace("Bearer ", ""));
+            if (!result || !result.user) {
+                return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
+            }
+        } catch(err) {
+            console.error(err);
+            return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
         }
-        const isBanned = await Banlist.findOne({ $or: [{ token }, { user: result.id }] });
-        if (isBanned) return res.status(403).json({ message: Errors.BANNED_TOKEN });
-        req.user = result.user;
+        try {
+            const isBanned = await Banlist.findOne({ token });
+            if (isBanned) return res.status(403).json({ message: AuthErrors.BANNED_TOKEN });
+            req.user = result.user;
+        } catch (error) {
+            console.error(error)
+            return res.status(500).json({ message: AuthErrors.BANNED_TOKEN });
+        }
+        
         next();
     }
 
@@ -191,7 +222,7 @@ class Auth {
             await Banlist.create({ token });
             return { result: true };
         } catch (error) {
-            return { result: true };
+            throw error;
         }
     }
 
@@ -240,13 +271,17 @@ class Auth {
      */
     async firebase(token) {
         try {
+            token = token.replace("Bearer ", "")
             const { result, user, error, code } = await this.AuthHandler.login(token);
-            if (error) throw new Error(error);
-            if (!result) return false;
+            if (error || !result) {
+                throw new AuthError(AuthErrors.GENERIC);
+            }
+
             const banned = await Banlist.findOne({ user: user.id })
-            if (banned) throw new Error({ message: Errors.BANNED_USER, code: 403 });
+            if (banned) throw new AuthError(AuthErrors.BANNED_USER);
             return { user };
         } catch (err) {
+            console.error(err)
             throw err;
         }
     }
