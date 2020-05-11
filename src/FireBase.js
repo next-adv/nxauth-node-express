@@ -12,8 +12,10 @@ class FireBase {
         this.UserModel = UserModel;
         this.tokenprefix = tokenprefix
         if(!this.client) return false;
+        this.login = this.login.bind(this);
         this.bind();
     }
+
     bind() {
         admin.initializeApp({
             credential: admin.credential.cert(this.serviceAccount),
