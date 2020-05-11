@@ -12,7 +12,6 @@ class FireBase {
         this.databaseURL = databaseURL;
         this.UserModel = new AbstractUserModel(UserModel, UserModelType || "mongoose");
         this.tokenprefix = tokenprefix;
-        console.log("TOKENPREFIX",this.tokenprefix)
         if (!this.client) return false;
         this.bind();
     }
@@ -25,7 +24,7 @@ class FireBase {
         this.aget = promisify(this.client.get).bind(this.client);
         this.aset = promisify(this.client.set).bind(this.client);
         this.adel = promisify(this.client.del).bind(this.client);
-        console.log("Class Auth Initialized")
+        console.log("Class FirebaseAuth Initialized, token prefix", this.tokenprefix)
     }
 
     async purge(token) {

@@ -35,13 +35,7 @@ class AbstractUserModel {
                 }
             }
             this.model = this.defaultModel;
-            if(Array.isArray(model)){
-                this.data = model;
-            } else {
-                this.data = [model];
-            }
-            this.findOne = (query, options) => this.model.findOne(query, options)
-            this.find  = (query, projection, options) => this.model.find(query, projection, options)
+            this.data = Array.isArray(model)? model : [model];
         }
 
         this.findOne = (query, options) => this.model.findOne(query, options)

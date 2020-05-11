@@ -130,6 +130,7 @@ class Auth {
                 console.log("NO TOKEN RESULT")
                 return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
             }
+            req.user = result;
         } catch(err) {
             console.error(err);
             return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
@@ -137,7 +138,6 @@ class Auth {
         try {
             const isBanned = await Banlist.findOne({ token: req.headers.authorization.replace("Bearer ", "") });
             if (isBanned) return res.status(403).json({ message: AuthErrors.BANNED_TOKEN });
-            req.user = result;
         } catch (error) {
             console.error(error)
             return res.status(500).json({ message: AuthErrors.BANNED_TOKEN });
