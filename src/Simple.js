@@ -3,6 +3,8 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { machineIdSync } = require("node-machine-id");
 const AbstractUserModel = require("./AbstractUserModel");
+const package = require("../package.json")
+const colors = require("colors");
 
 class Simple {
     /**
@@ -19,6 +21,7 @@ class Simple {
         this.UserModel = new AbstractUserModel(UserModel, UserModelType || "mongoose");
         this.verify = passwordVerify ? passwordVerify : this.default;
         this.options = options || {};
+        console.log(package.name.cyan, package.version.yellow, "Class SimpleAuth Initialized")
     }
 
     async purge(token) {
@@ -52,7 +55,6 @@ class Simple {
 
     createPassword(password) {
         try {
-            console.log("secret", this.secretKey, password)
             const pwd = crypto.createHash("sha256").update(this.secretKey + password).digest("hex");
             const salt = crypto.randomBytes(32).toString('hex');
             const key = crypto.pbkdf2Sync(pwd, salt, 2048, 64, 'sha512');
@@ -79,7 +81,7 @@ class Simple {
                 }
                 return { user }
             } catch (err) {
-                console.error(err)
+                console.error(package.name, package.version, err.message);
                 return false;
             }
         }
@@ -99,7 +101,7 @@ class Simple {
             const test = hash("sha256").update(this.secretKey + password).digest("hex");
             return this.verifyPassword(test, hashed);
         } catch (err) {
-            console.log(err)
+            console.error(package.name, package.version, err.message);
             return false;
         }
     }

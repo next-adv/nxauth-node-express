@@ -5,6 +5,8 @@ const Simple = require("./src/Simple");
 const Banlist = require("./src/Banlist");
 const {AuthError, AuthErrors} = require("./src/Errors");
 const mongoose = require("mongoose");
+const colors = reequire("colors");
+const package = requiire("./package.json")
 
 class Auth {
     /**
@@ -42,7 +44,7 @@ class Auth {
                 useCreateIndex: true
             }).then(() => {
                 mongoose.set('useFindAndModify', false);
-                console.log("NXAUTH Mongo connected:".green, mongooseUri.yellow)
+                console.log(package.name.cyan, package.version.yellow, "NXAUTH Mongo connected:".green, mongooseUri.yellow)
             });
             switch (provider.toLowerCase()) {
                 default:
@@ -59,7 +61,15 @@ class Auth {
             throw err;
         }
         this.middleware = this.middleware.bind(this);
+    }
 
+    setRoutes(routes, app) {
+        if(routes && app) {
+            this.app = app;
+            this.routes = routes;
+            routes.init(app, [this.middleware])
+            console.log(package.name.cyan, package.version.yellow, "NXAUTH Routes Created:".green, routes.routes)
+        }
     }
     
     /**
@@ -128,19 +138,19 @@ class Auth {
         try {
             result = await this.AuthHandler.middleware(req.headers.authorization.replace("Bearer ", ""));
             if (!result) {
-                console.log("NO TOKEN RESULT")
+                console.log(package.name.cyan, package.version.yellow, "middleware: NO TOKEN RESULT")
                 return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
             }
             req.user = result;
         } catch(err) {
-            console.error(err);
+            console.error(package.name, package.version, err.message);
             return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
         }
         try {
             const isBanned = await Banlist.findOne({ token: req.headers.authorization.replace("Bearer ", "") });
             if (isBanned) return res.status(403).json({ message: AuthErrors.BANNED_TOKEN });
-        } catch (error) {
-            console.error(error)
+        } catch (err) {
+            console.error(package.name, package.version, err.message);
             return res.status(500).json({ message: AuthErrors.BANNED_TOKEN });
         }
         
@@ -283,7 +293,7 @@ class Auth {
             if (banned) throw new AuthError(AuthErrors.BANNED_USER);
             return { user };
         } catch (err) {
-            console.error(err)
+            console.error(package.name, package.version, err.message);
             throw err;
         }
     }

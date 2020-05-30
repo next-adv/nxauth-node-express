@@ -2,6 +2,8 @@ const { promisify } = require("util");
 const admin = require("firebase-admin");
 const {AuthErrors, AuthError} = require("./Errors");
 const AbstractUserModel = require("./AbstractUserModel");
+const package = require("../package.json");
+const colors = require("colors");
 
 class FireBase {
     constructor(options) {
@@ -24,15 +26,15 @@ class FireBase {
         this.aget = promisify(this.client.get).bind(this.client);
         this.aset = promisify(this.client.set).bind(this.client);
         this.adel = promisify(this.client.del).bind(this.client);
-        console.log("Class FirebaseAuth Initialized, token prefix", this.tokenprefix)
+        console.log(package.name.cyan, package.version.yellow, "Class FirebaseAuth Initialized, token prefix", this.tokenprefix)
     }
 
     async purge(token) {
         try {
             await this.adel(`${this.tokenprefix}:${token}`);
             return true;
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(package.name, package.version, err.message);
             return false;
         }
     }
@@ -46,7 +48,7 @@ class FireBase {
             }
             return JSON.parse(cache);
         } catch (err) {
-            console.error(err)
+            console.error(package.name, package.version, err.message);
             return false;
         }
     }
@@ -57,7 +59,7 @@ class FireBase {
             const decodedToken = await admin.auth().verifyIdToken(token);
             return decodedToken;
         } catch (err) {
-            console.error(err)
+            console.error(package.name, package.version, err.message);
             return false;
         }
 
@@ -67,8 +69,8 @@ class FireBase {
         try {
             await this.adel(`${this.tokenprefix}:${token}`);
             return true;
-        } catch (error) {
-            console.log(error)
+        } catch (err) {
+            console.error(package.name, package.version, err.message);
             this.client.del(`${this.tokenprefix}:${token}`);
         }
     }
@@ -84,12 +86,10 @@ class FireBase {
                 await this.aset(`${this.tokenprefix}:${token}`, JSON.stringify(founduser), 'EX', exp);
                 return { result: true, user: founduser };
             } else {
-                console.error(AuthErrors.FIREBASE_USERISNEW)
                 throw new AuthError(AuthErrors.FIREBASE_USERISNEW);
             }
-        } catch (error) {
-            console.error(error)
-            throw error;
+        } catch (err) {
+            throw err;
         }
 
     }
