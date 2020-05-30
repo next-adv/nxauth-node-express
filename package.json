@@ -1,6 +1,6 @@
 {
   "name": "@next-adv/nxauth-node-express",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Authentication library",
   "main": "index.js",
   "scripts": {

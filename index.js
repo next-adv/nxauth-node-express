@@ -33,7 +33,7 @@ class Auth {
         this.secretKey = secretKey;
         this.redis = redisCli;
         this.provider = provider;
-        this.tokenprefix = firebase.tokenprefix;
+        this.firebase = firebase;
 
         try {
             mongoose.connect(mongooseUri, {
@@ -52,7 +52,7 @@ class Auth {
                 case "firebase":
                     const serviceAccount = require(firebase.serviceAccount);
                     const databaseURL = firebase.databaseURL;
-                    this.AuthHandler = new Firebase({ UserModel, UserModelType: this.UserModelType, databaseURL, serviceAccount, redisCli, tokenprefix: this.tokenprefix });
+                    this.AuthHandler = new Firebase({ UserModel, UserModelType: this.UserModelType, databaseURL, serviceAccount, redisCli, tokenprefix: this.firebase.tokenprefix });
                     break;
             }
         } catch(err) {
