@@ -68,7 +68,7 @@ class Auth {
             this.app = app;
             this.routes = routes;
             routes.init(app, [this.middleware])
-            console.log(packageObj.name.cyan, packageObj.version.yellow, "NXAUTH Routes Created:".green, routes.routes)
+            console.log(packageObj.name.cyan, packageObj.version.yellow, "NXAUTH Routes Created:".green, routes.routes.map(i => `path: ${i.path}`))
         }
     }
     
