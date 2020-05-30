@@ -74,7 +74,7 @@ class Auth {
             switch (this.provider.toLowerCase()) {
                 default:
                 case "simple":
-                    const pwd = await this.AuthHandler.createPassword(data[this.passwordField]);
+                    const pwd = this.AuthHandler.createPassword(data[this.passwordField]);
                     data[this.passwordField] = pwd;
                     return await this.UserModel.create(data);
                 case "firebase":
@@ -103,7 +103,7 @@ class Auth {
      */
     async updatePassword(id, newpass) {
         try {
-            const pwd = await this.AuthHandler.createPassword(newpass);
+            const pwd = this.AuthHandler.createPassword(newpass);
             return await this.UserModel.findByIdAndUpdate(id, { $set: { [this.passwordField]: pwd } }, { new: true });
         } catch (err) {
             throw err;

@@ -1,7 +1,6 @@
 
-const hash = require("crypto").createHash;
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
-const bcrypt = require('bcrypt');
 const { machineIdSync } = require("node-machine-id");
 const AbstractUserModel = require("./AbstractUserModel");
 
@@ -16,7 +15,7 @@ class Simple {
             this.authIssuer = authIssuer || "expreess-test-example",
             this.usernameField = usernameField || "email";
         this.passwordField = passwordField || "password";
-        this.secretKey = secretKey || hash("sha256").update(machineIdSync() + __dirname).digest("hex");
+        this.secretKey = secretKey || crypto.createHash("sha256").update(machineIdSync() + __dirname).digest("hex");
         this.UserModel = new AbstractUserModel(UserModel, UserModelType || "mongoose");
         this.verify = passwordVerify ? passwordVerify : this.default;
         this.saltrounds = options.saltrounds || 12;
@@ -47,15 +46,21 @@ class Simple {
         }
     }
 
-    async createPassword(password) {
+    createPassword(password) {
         try {
             console.log("secret", this.secretKey, password)
-            const pwd = hash("sha256").update(this.secretKey + password).digest("hex");
-            const bpwd = await bcrypt.hash(pwd, this.saltrounds);
-            return bpwd;
+            const pwd = crypto.createHash("sha256").update(this.secretKey + password).digest("hex");
+            const salt = crypto.randomBytes(32).toString('hex');
+            const key = crypto.pbkdf2Sync(pwd, salt, 2048, 64, 'sha512');
+            return [salt,key].join("$");
         } catch (err) {
             throw err;
         }
+    }
+    verifyPassword(password, original) {
+        const [salt,originalHash] = original.split('$');
+        const hash = crypto.pbkdf2Sync(password, salt, 2048, 64, 'sha512').toString('hex');
+        return hash === originalHash;
     }
 
     async middleware(token) {
@@ -83,7 +88,7 @@ class Simple {
     async default(password, hashed) {
         try {
             const test = hash("sha256").update(this.secretKey + password).digest("hex");
-            return await bcrypt.compare(test, hashed);
+            return this.verifyPassword(test, hashed);
         } catch (err) {
             console.log(err)
             return false;
