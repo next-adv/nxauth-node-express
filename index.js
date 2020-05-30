@@ -67,8 +67,16 @@ class Auth {
         if(routes && app) {
             this.app = app;
             this.routes = routes;
-            routes.init(app, [this.middleware])
-            console.log(packageObj.name.cyan, packageObj.version.yellow, "NXAUTH Routes Created:".green, routes.routes.map(i => `path: ${i.path}`))
+            try {
+                app.use((req, res, next) => {
+                    req.auth = this;
+                    next();
+                });
+                routes.init(app, [this.middleware]);
+                console.log(packageObj.name.cyan, packageObj.version.yellow, "NXAUTH Routes Created:".green, routes.routes.map(i => `path: ${i.path}`))
+            } catch (err) {
+                throw new AuthError(AuthErrors.ROUTES_ERROR.message)
+            }
         }
     }
     

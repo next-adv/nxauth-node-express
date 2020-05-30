@@ -7,6 +7,7 @@ const data = {
     DUPLICATE_USER_EMAIL: {message: "nxex-duplicate-user-data-email", code: 400},
     BANNED_USER: {message: "nxex-banned-user-data", code: 400},
     BANNED_TOKEN: {message: "nxex-banned-token-data", code: 400},
+    ROUTES_ERROR: {message: "nxex-routes-error", code: 500},
 }
 
 class AuthError extends Error {
@@ -25,7 +26,8 @@ const constants = {
     DUPLICATE_USER_EMAIL: "DUPLICATE_USER_EMAIL",
     BANNED_USER: "BANNED_USER",
     BANNED_TOKEN: "BANNED_TOKEN",
-    UNAUTHORIZED: "UNAUTHORIZED"
+    UNAUTHORIZED: "UNAUTHORIZED",
+    ROUTES_ERROR: "ROUTES_ERROR",
 };
 
 module.exports = {
