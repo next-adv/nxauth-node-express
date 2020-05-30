@@ -20,7 +20,7 @@ class Auth {
         authDomain, authIssuer, provider, secretKey,
         usernameField, passwordField, UserModel, UserModelType,
         firebase, redisCli,
-        mongooseUri
+        mongooseUri, authOptions
     }) {
         if (!provider) provider = "simple";
         this.authDomain = authDomain;
@@ -42,12 +42,12 @@ class Auth {
                 useCreateIndex: true
             }).then(() => {
                 mongoose.set('useFindAndModify', false);
-                console.log("NXAUTH Mongo connected:\x1b[33m", mongooseUri)
+                console.log("NXAUTH Mongo connected:".green, mongooseUri.yellow)
             });
             switch (provider.toLowerCase()) {
                 default:
                 case "simple":
-                    this.AuthHandler = new Simple({ authDomain, authIssuer, UserModel, UserModelType: this.UserModelType, usernameField, passwordField, secretKey });
+                    this.AuthHandler = new Simple({ authDomain, authIssuer, UserModel, UserModelType: this.UserModelType, usernameField, passwordField, secretKey, ...authOptions });
                     break;
                 case "firebase":
                     const serviceAccount = require(firebase.serviceAccount);

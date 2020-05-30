@@ -12,14 +12,13 @@ class Simple {
     constructor(options) {
         const { authDomain, authIssuer, UserModel, UserModelType, usernameField, passwordField, passwordVerify, secretKey } = options;
         this.authDomain = authDomain || "null.domain.com",
-            this.authIssuer = authIssuer || "expreess-test-example",
-            this.usernameField = usernameField || "email";
+        this.authIssuer = authIssuer || "express-test-example",
+        this.usernameField = usernameField || "email";
         this.passwordField = passwordField || "password";
         this.secretKey = secretKey || crypto.createHash("sha256").update(machineIdSync() + __dirname).digest("hex");
         this.UserModel = new AbstractUserModel(UserModel, UserModelType || "mongoose");
         this.verify = passwordVerify ? passwordVerify : this.default;
-        this.saltrounds = options.saltrounds || 12;
-
+        this.options = options || {};
     }
 
     async purge(token) {
@@ -37,7 +36,12 @@ class Simple {
     async login(username, password) {
         const query = { [this.usernameField]: username };
         try {
-            const user = await this.UserModel.findOne(query);
+            let user;
+            if(this.options.populate) {
+                user = await this.UserModel.findOne(query).populate(this.options.populate);
+            } else {
+                user = await this.UserModel.findOne(query);
+            }
             if (!user) return false;
             const result = await this.verify(password, user[this.passwordField]);
             return result ? user : false;
@@ -67,7 +71,12 @@ class Simple {
         const json = await this.verifyToken(token);
         if (json) {
             try {
-                const user = await this.UserModel.findById(json.id);
+                let user;
+                if(this.options.populate) {
+                    user = await this.UserModel.findById(json.id).populate(this.options.populate);
+                } else {
+                    user = await this.UserModel.findById(json.id);
+                }
                 return { user }
             } catch (err) {
                 console.error(err)
