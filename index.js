@@ -6,7 +6,7 @@ const Banlist = require("./src/Banlist");
 const {AuthError, AuthErrors} = require("./src/Errors");
 const mongoose = require("mongoose");
 const colors = require("colors");
-const packageObj = requiire("./package.json")
+const packageObj = require("./package.json")
 
 class Auth {
     /**
