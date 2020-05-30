@@ -3,7 +3,7 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { machineIdSync } = require("node-machine-id");
 const AbstractUserModel = require("./AbstractUserModel");
-const package = require("../package.json")
+const packageObj = require("../package.json")
 const colors = require("colors");
 
 class Simple {
@@ -21,7 +21,7 @@ class Simple {
         this.UserModel = new AbstractUserModel(UserModel, UserModelType || "mongoose");
         this.verify = passwordVerify ? passwordVerify : this.default;
         this.options = options || {};
-        console.log(package.name.cyan, package.version.yellow, "Class SimpleAuth Initialized")
+        console.log(packageObj.name.cyan, packageObj.version.yellow, "Class SimpleAuth Initialized")
     }
 
     async purge(token) {
@@ -81,7 +81,7 @@ class Simple {
                 }
                 return { user }
             } catch (err) {
-                console.error(package.name, package.version, err.message);
+                console.error(packageObj.name, packageObj.version, err.message);
                 return false;
             }
         }
@@ -101,7 +101,7 @@ class Simple {
             const test = hash("sha256").update(this.secretKey + password).digest("hex");
             return this.verifyPassword(test, hashed);
         } catch (err) {
-            console.error(package.name, package.version, err.message);
+            console.error(packageObj.name, packageObj.version, err.message);
             return false;
         }
     }

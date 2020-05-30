@@ -2,7 +2,7 @@ const { promisify } = require("util");
 const admin = require("firebase-admin");
 const {AuthErrors, AuthError} = require("./Errors");
 const AbstractUserModel = require("./AbstractUserModel");
-const package = require("../package.json");
+const packageObj = require("../package.json");
 const colors = require("colors");
 
 class FireBase {
@@ -26,7 +26,7 @@ class FireBase {
         this.aget = promisify(this.client.get).bind(this.client);
         this.aset = promisify(this.client.set).bind(this.client);
         this.adel = promisify(this.client.del).bind(this.client);
-        console.log(package.name.cyan, package.version.yellow, "Class FirebaseAuth Initialized, token prefix", this.tokenprefix)
+        console.log(packageObj.name.cyan, packageObj.version.yellow, "Class FirebaseAuth Initialized, token prefix", this.tokenprefix)
     }
 
     async purge(token) {
@@ -34,7 +34,7 @@ class FireBase {
             await this.adel(`${this.tokenprefix}:${token}`);
             return true;
         } catch (err) {
-            console.error(package.name, package.version, err.message);
+            console.error(packageObj.name, packageObj.version, err.message);
             return false;
         }
     }
@@ -48,7 +48,7 @@ class FireBase {
             }
             return JSON.parse(cache);
         } catch (err) {
-            console.error(package.name, package.version, err.message);
+            console.error(packageObj.name, packageObj.version, err.message);
             return false;
         }
     }
@@ -59,7 +59,7 @@ class FireBase {
             const decodedToken = await admin.auth().verifyIdToken(token);
             return decodedToken;
         } catch (err) {
-            console.error(package.name, package.version, err.message);
+            console.error(packageObj.name, packageObj.version, err.message);
             return false;
         }
 
@@ -70,7 +70,7 @@ class FireBase {
             await this.adel(`${this.tokenprefix}:${token}`);
             return true;
         } catch (err) {
-            console.error(package.name, package.version, err.message);
+            console.error(packageObj.name, packageObj.version, err.message);
             this.client.del(`${this.tokenprefix}:${token}`);
         }
     }
