@@ -1,3 +1,5 @@
+
+
 const Firebase = require("./src/FireBase");
 const Simple = require("./src/Simple");
 const Banlist = require("./src/Banlist");
@@ -33,16 +35,15 @@ class Auth {
         this.provider = provider;
         this.tokenprefix = firebase.tokenprefix;
 
-        mongoose.connect(mongooseUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useCreateIndex: true
-        }).then(() => {
-            mongoose.set('useFindAndModify', false);
-            console.log("NXAUTH Mongo connected:\x1b[33m", mongooseUri)
-        });
-
         try {
+            mongoose.connect(mongooseUri, {
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+                useCreateIndex: true
+            }).then(() => {
+                mongoose.set('useFindAndModify', false);
+                console.log("NXAUTH Mongo connected:\x1b[33m", mongooseUri)
+            });
             switch (provider.toLowerCase()) {
                 default:
                 case "simple":

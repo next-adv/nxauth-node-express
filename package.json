@@ -9,7 +9,7 @@
   "author": "NextADV",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^4.0.1",
+    "bcrypt": "^3.0.8",
     "firebase-admin": "^8.12.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.13",
