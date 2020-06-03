@@ -36,7 +36,7 @@ class Auth {
         this.redis = redisCli;
         this.provider = provider;
         this.firebase = firebase;
-
+        
         try {
             mongoose.connect(mongooseUri, {
                 useNewUrlParser: true,
@@ -289,7 +289,7 @@ class Auth {
      * @returns
      * @memberof Auth
      */
-    async firebase(token) {
+    async firebaseAccess(token) {
         try {
             token = token.replace("Bearer ", "")
             const { result, user, error, code } = await this.AuthHandler.login(token);
