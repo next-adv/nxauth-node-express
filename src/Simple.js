@@ -57,7 +57,7 @@ class Simple {
         try {
             const pwd = crypto.createHash("sha256").update(this.secretKey + password).digest("hex");
             const salt = crypto.randomBytes(32).toString('hex');
-            const key = crypto.pbkdf2Sync(pwd, salt, 2048, 64, 'sha512');
+            const key = crypto.pbkdf2Sync(pwd, salt, 2048, 64, 'sha512').toString('hex');
             return [salt,key].join("$");
         } catch (err) {
             throw err;
@@ -98,7 +98,7 @@ class Simple {
 
     async default(password, hashed) {
         try {
-            const test = hash("sha256").update(this.secretKey + password).digest("hex");
+            const test = crypto.createHash("sha256").update(this.secretKey + password).digest("hex");
             return this.verifyPassword(test, hashed);
         } catch (err) {
             console.error(packageObj.name, packageObj.version, err.message);
