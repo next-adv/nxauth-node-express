@@ -31,13 +31,49 @@ const auth = new Auth({
         tokenprefix: "expreess-test", // redis prefix for token cache
         serviceAccount: path.join(__dirname,".","SERVICE ACCOUNT PATH"),
         databaseURL: "NOME DATABASE.firebaseio.com"
-    }
+    },
+    authOptions // options to populate subobjects of User
 });
 
 ...
+```
 
-// Middleware per passare l'oggetto auth e user nelle request
+# Configurazione Routes e handlers
 
+Utilizzare un oggetto routes da passare all'inizializzatore con i seguenti parametri
+
+```javascript
+const routes = [
+    { path: "/", handler: indexRouter, public: true }, //indexRouter è il controller importato, public toglie i middleware
+    { path: "/users", handler: usersRouter, public: true },
+]
+const init = (app, middlewares) => {
+    for(const route of routes){
+        const rest = [...(!route.public? middlewares : []), route.handler]
+        app.use(route.path, ...rest)
+    }
+}
+module.exports = {
+    init,
+    routes
+}
+
+```
+e poi passarlo alla classe auth 
+
+```javascript
+const routes = require("./routes");
+const app = express();
+
+...
+
+const auth = new Auth(options);
+auth.setRoutes(routes, app)
+```
+
+# Middleware per passare l'oggetto auth e user nelle request
+
+```javascript
 app.use((req,res,next) => {
     req.auth = auth;
     next();
@@ -58,7 +94,7 @@ router.post('/auth', async (req, res, next) => {
     let result;
     switch (req.auth.provider) {
       case "firebase":
-        result = await req.auth.firebase(req.headers.authorization.replace("Bearer ", ""));
+        result = await req.auth.firebaseAccess(req.headers.authorization.replace("Bearer ", ""));
         if (result.user) {
             return res.json({ result: true, user: result.user });
         } else {

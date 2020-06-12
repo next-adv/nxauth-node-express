@@ -79,7 +79,7 @@ class Simple {
                 } else {
                     user = await this.UserModel.findById(json.id);
                 }
-                return { user }
+                return user;
             } catch (err) {
                 console.error(packageObj.name, packageObj.version, err.message);
                 return false;
