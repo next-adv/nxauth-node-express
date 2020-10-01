@@ -40,10 +40,10 @@ class Auth {
 
         this.middleware = this.middleware.bind(this);
 
-        this.init(mongooseUri);
+        this.init(mongooseUri, authOptions || {});
     }
 
-    async init(mongooseUri) {
+    async init(mongooseUri, authOptions) {
         try {
             await mongoose.connect(mongooseUri, {
                 useNewUrlParser: true,
@@ -68,7 +68,7 @@ class Auth {
                     break;
             }
         } catch (err) {
-            throw err;
+            console.error(err);
         }
     }
     setRoutes(routes, app) {
