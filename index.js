@@ -3,10 +3,11 @@
 const Firebase = require("./src/FireBase");
 const Simple = require("./src/Simple");
 const Banlist = require("./src/Banlist");
-const {AuthError, AuthErrors} = require("./src/Errors");
+const { AuthError, AuthErrors } = require("./src/Errors");
 const mongoose = require("mongoose");
 const colors = require("colors");
-const packageObj = require("./package.json")
+const packageObj = require("./package.json");
+const { init } = require("./src/Banlist");
 
 class Auth {
     /**
@@ -36,35 +37,42 @@ class Auth {
         this.redis = redisCli;
         this.provider = provider;
         this.firebase = firebase;
-        
+
+        this.middleware = this.middleware.bind(this);
+
+        this.init(mongooseUri);
+    }
+
+    async init(mongooseUri) {
         try {
-            mongoose.connect(mongooseUri, {
+            await mongoose.connect(mongooseUri, {
                 useNewUrlParser: true,
                 useUnifiedTopology: true,
                 useCreateIndex: true
-            }).then(() => {
-                mongoose.set('useFindAndModify', false);
-                console.log(packageObj.name.cyan, packageObj.version.yellow, "NXAUTH Mongo connected:".green, mongooseUri.yellow)
-            });
+            })
+            const { authDomain, authIssuer, provider, secretKey,
+                usernameField, passwordField, UserModel, UserModelType,
+                firebase, redisCli, } = this
+            mongoose.set('useFindAndModify', false);
+            console.log(packageObj.name.cyan, packageObj.version.yellow, "NXAUTH Mongo connected:".green, mongooseUri.yellow)
+
             switch (provider.toLowerCase()) {
                 default:
                 case "simple":
-                    this.AuthHandler = new Simple({ authDomain, authIssuer, UserModel, UserModelType: this.UserModelType, usernameField, passwordField, secretKey, ...authOptions });
+                    this.AuthHandler = new Simple({ authDomain, authIssuer, UserModel, UserModelType, usernameField, passwordField, secretKey, ...authOptions });
                     break;
                 case "firebase":
                     const serviceAccount = require(firebase.serviceAccount);
                     const databaseURL = firebase.databaseURL;
-                    this.AuthHandler = new Firebase({ UserModel, UserModelType: this.UserModelType, databaseURL, serviceAccount, redisCli, tokenprefix: this.firebase.tokenprefix });
+                    this.AuthHandler = new Firebase({ UserModel, UserModelType, databaseURL, serviceAccount, redisCli, tokenprefix: firebase.tokenprefix });
                     break;
             }
-        } catch(err) {
+        } catch (err) {
             throw err;
         }
-        this.middleware = this.middleware.bind(this);
     }
-
     setRoutes(routes, app) {
-        if(routes && app) {
+        if (routes && app) {
             this.app = app;
             this.routes = routes;
             try {
@@ -79,7 +87,7 @@ class Auth {
             }
         }
     }
-    
+
     /**
      * Creates a user
      * 
@@ -150,7 +158,7 @@ class Auth {
                 return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
             }
             req.user = result;
-        } catch(err) {
+        } catch (err) {
             console.error(packageObj.name, packageObj.version, err.message);
             return res.status(401).json({ message: AuthErrors.UNAUTHORIZED });
         }
@@ -161,7 +169,7 @@ class Auth {
             console.error(packageObj.name, packageObj.version, err.message);
             return res.status(500).json({ message: AuthErrors.BANNED_TOKEN });
         }
-        
+
         next();
     }
 
