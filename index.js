@@ -23,7 +23,7 @@ class Auth {
         authDomain, authIssuer, provider, secretKey,
         usernameField, passwordField, UserModel, UserModelType,
         firebase, redisCli,
-        mongooseUri, authOptions
+        mongooseUri, useUnifiedTopology, authOptions
     }) {
         if (!provider) provider = "simple";
         this.authDomain = authDomain;
@@ -40,14 +40,14 @@ class Auth {
 
         this.middleware = this.middleware.bind(this);
 
-        this.init(mongooseUri, authOptions || {});
+        this.init(mongooseUri, authOptions || {}, useUnifiedTopology);
     }
 
-    async init(mongooseUri, authOptions) {
+    async init(mongooseUri, authOptions, useUnifiedTopology) {
         try {
             await mongoose.connect(mongooseUri, {
                 useNewUrlParser: true,
-                useUnifiedTopology: true,
+                useUnifiedTopology: useUnifiedTopology || true,
                 useCreateIndex: true
             })
             const { authDomain, authIssuer, provider, secretKey,
