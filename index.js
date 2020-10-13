@@ -45,9 +45,10 @@ class Auth {
 
     async init(mongooseUri, authOptions, useUnifiedTopology) {
         try {
+            console.log('Connecting to',mongooseUri,'topology', useUnifiedTopology? 'unified':'legacy')
             await mongoose.connect(mongooseUri, {
                 useNewUrlParser: true,
-                useUnifiedTopology: useUnifiedTopology || true,
+                useUnifiedTopology: useUnifiedTopology? true : false,
                 useCreateIndex: true
             })
             const { authDomain, authIssuer, provider, secretKey,
