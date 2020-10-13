@@ -47,16 +47,16 @@ class Auth {
     }
     async init(mongooseUri, authOptions, useUnifiedTopology) {
         try {
-            console.log('Connecting to',mongooseUri,'topology', useUnifiedTopology? 'unified':'legacy')
-            await mongoose.connect(mongooseUri, {
+            //console.log('Connecting to',mongooseUri,'topology', useUnifiedTopology? 'unified':'legacy')
+            /* await mongoose.connect(mongooseUri, {
                 useNewUrlParser: true,
                 useUnifiedTopology: useUnifiedTopology? true : false,
                 useCreateIndex: true
-            })
+            }) */
+            //mongoose.set('useFindAndModify', false);
             const { authDomain, authIssuer, provider, secretKey,
                 usernameField, passwordField, UserModel, UserModelType,
                 firebase, redisCli, } = this
-            mongoose.set('useFindAndModify', false);
             console.log(packageObj.name.cyan, packageObj.version.yellow, "NXAUTH Mongo connected:".green, mongooseUri.yellow)
 
             switch (provider.toLowerCase()) {
