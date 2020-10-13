@@ -42,7 +42,9 @@ class Auth {
 
         this.init(mongooseUri, authOptions || {}, useUnifiedTopology);
     }
-
+    mongoose() {
+        return mongoose;
+    }
     async init(mongooseUri, authOptions, useUnifiedTopology) {
         try {
             console.log('Connecting to',mongooseUri,'topology', useUnifiedTopology? 'unified':'legacy')
